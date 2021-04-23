@@ -1,0 +1,25 @@
+<% layout('/layouts/boilerplate')%>
+    <h1>All BnbAirs</h1>
+
+    <% for(let bnbair of bnbairs) {%>
+        <div class="card mb-3">
+            <div class="row">
+                <div class="col-md-4">
+                    <img src="<%=bnbair.image%>" alt="">
+                </div>
+                <div class="col-mg-8">
+                    <div class="card-body">
+                        <h5 class="card-title"><%=bnbair.title%></h5>
+                        <p class="card-text"><%=bnbair.description%></p>
+                        <p class="card-text">
+                            <small><%=bnbair.location%></small>
+                        </p>
+                        <a class="btn btn-primary" href="/bnbairs/<%=bnbair._id%>">View this BnbAir</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <%} %>
+    <div>
+        <a href="/bnbairs/new">Add a Bnbair</a>
+    </div>
