@@ -4,6 +4,7 @@ const AppError = require('../utils/AppError');
 const catchAsync = require('../utils/catchAsync');
 const Bnbair = require('../models/places');
 const {bnbSchema} = require('../schemas');
+const {isLoggedIn} = require('../middleware');
 
 const validateBnbair = (req,res,next) =>{
     const {error} = bnbSchema.validate(req.body);
@@ -22,7 +23,7 @@ router.get('/', catchAsync(async (req,res) =>{
     res.render('bnbairs/index', {bnbairs});
 }));
 
-router.get('/new', (req,res) =>{
+router.get('/new', isLoggedIn, (req,res) =>{
     res.render('bnbairs/new');
 });
 
@@ -37,7 +38,7 @@ router.get('/:id', catchAsync(async (req,res) =>{
     res.render('bnbairs/show', {bnbair})
 }));
 
-router.get('/:id/edit', catchAsync(async (req,res) => {
+router.get('/:id/edit', isLoggedIn, catchAsync(async (req,res) => {
     const {id} = req.params;
     const bnbair = await Bnbair.findById(id);
     if(!bnbair){
@@ -49,7 +50,7 @@ router.get('/:id/edit', catchAsync(async (req,res) => {
 
 //POST ROUTES
 
-router.post('/', validateBnbair, catchAsync(async (req,res) =>{
+router.post('/', isLoggedIn, validateBnbair, catchAsync(async (req,res) =>{
     const bnbair = new Bnbair(req.body);
     await bnbair.save();
     req.flash('success', 'Successfully made a new bnbair!');
@@ -58,7 +59,7 @@ router.post('/', validateBnbair, catchAsync(async (req,res) =>{
 
 //PUT ROUTES
 
-router.put('/:id', validateBnbair, catchAsync(async(req,res) =>{
+router.put('/:id', isLoggedIn, validateBnbair, catchAsync(async(req,res) =>{
     if(!req.body.bnbair) throw new AppError('Invalid BnbAir Data',400);
     const {id} = req.params;
     const bnbair = await Bnbair.findByIdAndUpdate(id, {...req.body.bnbair}, {useFindAndModify: false});
@@ -69,7 +70,7 @@ router.put('/:id', validateBnbair, catchAsync(async(req,res) =>{
 
 //DELETE ROUTES
 
-router.delete('/:id', catchAsync(async(req,res) =>{
+router.delete('/:id', isLoggedIn, catchAsync(async(req,res) =>{
     const {id} = req.params;
     const bnbair = await Bnbair.findByIdAndDelete(id);
     if(!bnbair){
