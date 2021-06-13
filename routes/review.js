@@ -1,38 +1,27 @@
 const express = require('express');
 const router = express.Router({mergeParams: true});
 const Bnbair = require('../models/places');
-const Review = require('../models/review')
-const AppError = require('../utils/AppError');
+const Review = require('../models/review');
 const catchAsync = require('../utils/catchAsync');
-const {reviewSchema} = require('../schemas');
+const {validateReview, isLoggedIn, isReviewAuthor} = require('../middleware');
 
-//Middleware validating review params
-const validateReview = (req,res,next) =>{
-    const {error} = reviewSchema.validate(req.body);
-    if(error){
-        const msg = error.details.map(el => el.message).join(',');
-        throw new AppError(msg,400);
-    } else{
-        next();
-    }
-}
-
-router.post('/', validateReview, catchAsync(async (req,res) =>{
+router.post('/', isLoggedIn, validateReview, catchAsync(async (req,res) =>{
     const bnbair = await Bnbair.findById(req.params.id);
     const review = new Review(req.body.review);
+    review.author = req.user._id;
     bnbair.reviews.push(review);
     await review.save();
     await bnbair.save();
-    req.flash('success', 'Created new Review');
+    req.flash('success', 'Thanks for leaving a review!');
     res.redirect(`/bnbairs/${bnbair._id}`);
 }));
 
 
-router.delete('/:reviewId', catchAsync(async (req,res) =>{
+router.delete('/:reviewId', isLoggedIn, isReviewAuthor, catchAsync(async (req,res) =>{
     const {id, reviewId} = req.params;
     await Bnbair.findByIdAndUpdate(id, {$pull: {reviews:reviewId}});
     await Review.findByIdAndDelete(reviewId);
-    req.flash('success','Successfully deleted review!');
+    req.flash('success','We successfully deleted your review!');
     res.redirect(`/bnbairs/${id}`);
 }))
 

@@ -3,18 +3,7 @@ const router = express.Router();
 const AppError = require('../utils/AppError');
 const catchAsync = require('../utils/catchAsync');
 const Bnbair = require('../models/places');
-const {bnbSchema} = require('../schemas');
-const {isLoggedIn} = require('../middleware');
-
-const validateBnbair = (req,res,next) =>{
-    const {error} = bnbSchema.validate(req.body);
-    if(error){
-        const msg = error.details.map(el => el.message).join(',');
-        throw new AppError(msg,400);
-    } else{
-        next();
-    }
-}
+const {isLoggedIn,isAuthor,validateBnbair} = require('../middleware');
 
 //GET ROUTES 
 
@@ -30,7 +19,8 @@ router.get('/new', isLoggedIn, (req,res) =>{
 
 router.get('/:id', catchAsync(async (req,res) =>{
     const {id} = req.params;
-    const bnbair = await Bnbair.findById(id).populate('reviews');
+    const bnbair = await (await Bnbair.findById(id)
+    .populate({path:'reviews', populate: {path: 'author'}}).populate('author'));
     if(!bnbair){
         req.flash('error','Cannot find that bnbair');
         return res.redirect('/bnbairs');
@@ -38,7 +28,7 @@ router.get('/:id', catchAsync(async (req,res) =>{
     res.render('bnbairs/show', {bnbair})
 }));
 
-router.get('/:id/edit', isLoggedIn, catchAsync(async (req,res) => {
+router.get('/:id/edit', isLoggedIn, isAuthor, catchAsync(async (req,res) => {
     const {id} = req.params;
     const bnbair = await Bnbair.findById(id);
     if(!bnbair){
@@ -51,7 +41,8 @@ router.get('/:id/edit', isLoggedIn, catchAsync(async (req,res) => {
 //POST ROUTES
 
 router.post('/', isLoggedIn, validateBnbair, catchAsync(async (req,res) =>{
-    const bnbair = new Bnbair(req.body);
+    const bnbair = new Bnbair(req.body.bnbair);
+    bnbair.author = req.user._id;
     await bnbair.save();
     req.flash('success', 'Successfully made a new bnbair!');
     res.redirect(`/bnbairs/${bnbair._id}`);
@@ -59,8 +50,7 @@ router.post('/', isLoggedIn, validateBnbair, catchAsync(async (req,res) =>{
 
 //PUT ROUTES
 
-router.put('/:id', isLoggedIn, validateBnbair, catchAsync(async(req,res) =>{
-    if(!req.body.bnbair) throw new AppError('Invalid BnbAir Data',400);
+router.put('/:id', isLoggedIn, isAuthor, validateBnbair, catchAsync(async(req,res) =>{
     const {id} = req.params;
     const bnbair = await Bnbair.findByIdAndUpdate(id, {...req.body.bnbair}, {useFindAndModify: false});
     req.flash('success', 'Successfully updated bnbair!');
@@ -77,6 +67,8 @@ router.delete('/:id', isLoggedIn, catchAsync(async(req,res) =>{
         req.flash('error','Cannot find that bnbair');
         return res.redirect('/bnbairs');
     }
+
+    req.flash('success', 'Successfully removed your bnbair listing!');
     res.redirect('/bnbairs');
 }));
 

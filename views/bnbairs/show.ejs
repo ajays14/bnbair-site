@@ -9,8 +9,10 @@
       </div>
       <ul class="list-group list-group-flush">
         <li class="list-group-item text-muted"><%=bnbair.location%></li>
+        <li class="list-group-item text-muted"><b>Host:</b> <%=bnbair.author.username%></li>
         <li class="list-group-item">$<%=bnbair.price%> per night</li>
       </ul>
+      <% if(currentUser && bnbair.author.equals(currentUser._id)) { %>
       <div class="card-body">
         <a
           class="card-link btn btn-primary"
@@ -25,9 +27,11 @@
           <button class="btn btn-warning">Delete!</button>
         </form>
       </div>
+      <% } %>
     </div>
   </div>
   <div class="col-6">
+  <% if(currentUser){ %>
     <h2>Leave a Review!</h2>
     <form
       action="/bnbairs/<%=bnbair._id%>/reviews"
@@ -60,14 +64,18 @@
       </div>
       <button class="btn btn-success">Submit</button>
     </form>
+    <% } %>
     <% for(let review of bnbair.reviews) {%>
     <div class="mb-3">
       <div class="card">
         <div class="card-body">
           <h5 class="card-title">Rating: <%=review.rating%></h5>
-          <p class="card-text">Review: <%=review.body%></p>
+          <h6 class="card-subtitle">By: <%=review.author.username%></h6>
+          <p class="card-text"><i><%=review.body%></i></p>
+          <% if (currentUser && review.author.equals(currentUser._id)) { %>
           <form action="/bnbairs/<%=bnbair._id%>/reviews/<%=review._id%>?_method=DELETE" method="POST">
           <button class="btn btn-sm btn-danger">Delete</button></form>
+          <% } %>
         </div>
       </div>
     </div>
